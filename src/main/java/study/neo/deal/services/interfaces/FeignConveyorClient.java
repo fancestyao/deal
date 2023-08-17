@@ -16,7 +16,6 @@ public interface FeignConveyorClient {
     List<LoanOfferDTO> sendOffers(@RequestBody @Parameter(description =
             "Входные параметры для расчета условий кредита для пользователя")
                                               LoanApplicationRequestDTO loanApplicationRequestDTO);
-
     @PostMapping("/conveyor/calculation")
     void sendCalculation(@RequestBody @Parameter(description =
             "Входные параметры для расчета параметров кредита")
