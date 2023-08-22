@@ -3,10 +3,8 @@ package study.neo.deal.service.classes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import study.neo.deal.dto.ApplicationStatusHistoryDTO;
-import study.neo.deal.dto.CreditDTO;
-import study.neo.deal.dto.FinishRegistrationRequestDTO;
-import study.neo.deal.dto.ScoringDataDTO;
+import org.springframework.transaction.annotation.Transactional;
+import study.neo.deal.dto.*;
 import study.neo.deal.enumeration.ApplicationStatus;
 import study.neo.deal.enumeration.ChangeType;
 import study.neo.deal.enumeration.CreditStatus;
@@ -14,6 +12,7 @@ import study.neo.deal.model.Application;
 import study.neo.deal.exception.NotFoundException;
 import study.neo.deal.model.Credit;
 import study.neo.deal.repository.ApplicationRepository;
+import study.neo.deal.repository.ClientRepository;
 import study.neo.deal.repository.CreditRepository;
 import study.neo.deal.service.interfaces.CalculateService;
 import study.neo.deal.service.interfaces.FeignConveyorClient;
@@ -26,9 +25,11 @@ import java.time.LocalDateTime;
 public class CalculateServiceImpl implements CalculateService {
     private final FeignConveyorClient feignConveyorClient;
     private final ApplicationRepository applicationRepository;
+    private final ClientRepository clientRepository;
     private final CreditRepository creditRepository;
 
     @Override
+    @Transactional
     public void configureCalculation(FinishRegistrationRequestDTO finishRegistrationRequestDTO, Long applicationId) {
         log.info("Достаем из БД заявку с id: " + applicationId);
         Application application = applicationRepository
@@ -36,9 +37,14 @@ public class CalculateServiceImpl implements CalculateService {
                 .orElseThrow(() -> new NotFoundException("Заявки с id: " +
                         applicationId + " не существует."));
         log.info("Рассматриваемая заявка: {}", application);
-        ScoringDataDTO scoringDataDTO = fillScoringDataDTO(finishRegistrationRequestDTO, application);
+        log.info("Насыщаем Client {} из Application с помощью FinishRegistrationRequestDTO", application.getClient());
+        fillClient(finishRegistrationRequestDTO, application);
+        log.info("Сохраняем Client {} из Application в репозиторий", application.getClient());
+        clientRepository.save(application.getClient());
+        log.info("Обновленный Client {}", application.getClient());
         log.info("Насыщаем данными ScoringDataDTO с помощью Client из application: {}" +
                 " и FinisRegistrationRequestDTO: {}", application.getClient(), finishRegistrationRequestDTO);
+        ScoringDataDTO scoringDataDTO = fillScoringDataDTO(application);
         log.info("Отправляем Post-запрос на МС Conveyor");
         CreditDTO creditDTO = feignConveyorClient.getCalculation(scoringDataDTO);
         log.info("Получаем CreditDTO с MC Conveyor: {}", creditDTO);
@@ -69,16 +75,39 @@ public class CalculateServiceImpl implements CalculateService {
         log.info("Заявка успешно изменена и добавлена в БД.");
     }
 
-    private ScoringDataDTO fillScoringDataDTO(FinishRegistrationRequestDTO finishRegistrationRequestDTO,
-                                              Application application) {
+    private void fillClient(FinishRegistrationRequestDTO finishRegistrationRequestDTO, Application application) {
+        Passport passport = Passport.builder()
+                .issueBranch(finishRegistrationRequestDTO.getPassportIssueBranch())
+                .issueDate(finishRegistrationRequestDTO.getPassportIssueDate())
+                .number(application.getClient().getPassport().getNumber())
+                .series(application.getClient().getPassport().getSeries())
+                .build();
+        EmploymentDTO employmentDTO = EmploymentDTO.builder()
+                .employmentINN(finishRegistrationRequestDTO.getEmployment().getEmploymentINN())
+                .employmentPosition(finishRegistrationRequestDTO.getEmployment().getEmploymentPosition())
+                .employmentStatus(finishRegistrationRequestDTO.getEmployment().getEmploymentStatus())
+                .salary(finishRegistrationRequestDTO.getEmployment().getSalary())
+                .workExperienceCurrent(finishRegistrationRequestDTO.getEmployment().getWorkExperienceCurrent())
+                .workExperienceTotal(finishRegistrationRequestDTO.getEmployment().getWorkExperienceTotal())
+                .build();
+        application.getClient().setGender(finishRegistrationRequestDTO.getGender());
+        application.getClient().setDependentAmount(finishRegistrationRequestDTO.getDependentAmount());
+        application.getClient().setPassport(passport);
+        application.getClient().setDependentAmount(finishRegistrationRequestDTO.getDependentAmount());
+        application.getClient().setEmployment(employmentDTO);
+        application.getClient().setAccount(finishRegistrationRequestDTO.getAccount());
+        application.getClient().setMaritalStatus(finishRegistrationRequestDTO.getMaritalStatus());
+    }
+
+    private ScoringDataDTO fillScoringDataDTO(Application application) {
         ScoringDataDTO scoringDataDTO = ScoringDataDTO.builder()
-                .gender(finishRegistrationRequestDTO.getGender())
-                .maritalStatus(finishRegistrationRequestDTO.getMaritalStatus())
-                .dependentAmount(finishRegistrationRequestDTO.getDependentAmount())
-                .passportIssueDate(finishRegistrationRequestDTO.getPassportIssueDate())
-                .passportIssueBranch(finishRegistrationRequestDTO.getPassportIssueBranch())
-                .employmentDTO(finishRegistrationRequestDTO.getEmployment())
-                .account(finishRegistrationRequestDTO.getAccount())
+                .gender(application.getClient().getGender())
+                .maritalStatus(application.getClient().getMaritalStatus())
+                .dependentAmount(application.getClient().getDependentAmount())
+                .passportIssueDate(application.getClient().getPassport().getIssueDate())
+                .passportIssueBranch(application.getClient().getPassport().getIssueBranch())
+                .employmentDTO(application.getClient().getEmployment())
+                .account(application.getClient().getAccount())
                 .firstName(application.getClient().getFirstName())
                 .lastName(application.getClient().getLastName())
                 .middleName(application.getClient().getMiddleName())

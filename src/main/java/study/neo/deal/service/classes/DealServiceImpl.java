@@ -1,13 +1,11 @@
 package study.neo.deal.service.classes;
 
-import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import study.neo.deal.dto.FinishRegistrationRequestDTO;
 import study.neo.deal.dto.LoanApplicationRequestDTO;
 import study.neo.deal.dto.LoanOfferDTO;
-import study.neo.deal.exception.ConflictDataRequest;
 import study.neo.deal.model.Application;
 import study.neo.deal.service.interfaces.*;
 
@@ -25,12 +23,7 @@ public class DealServiceImpl implements DealService {
     @Override
     public List<LoanOfferDTO> application(LoanApplicationRequestDTO loanApplicationRequestDTO) {
         Application application = applicationService.createApplication(loanApplicationRequestDTO);
-        List<LoanOfferDTO> result;
-        try {
-            result = feignConveyorClient.getOffers(loanApplicationRequestDTO);
-        } catch (FeignException.Conflict e) {
-            throw new ConflictDataRequest("loanApplicationRequestDTO не прошло валидацию.");
-        }
+        List<LoanOfferDTO> result = feignConveyorClient.getOffers(loanApplicationRequestDTO);
         for (LoanOfferDTO loanOfferDTO : result) {
             loanOfferDTO.setApplicationId(application.getApplicationId());
         }
