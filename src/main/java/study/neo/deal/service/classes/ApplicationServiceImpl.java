@@ -64,6 +64,8 @@ public class ApplicationServiceImpl implements ApplicationService {
                 .statusHistory(List.of(applicationStatusHistoryDTO))
                 .build();
         log.info("Созданная заявка: {}", application);
-        return applicationRepository.save(application);
+        Application applicationFromDb = applicationRepository.save(application);
+        log.info("Id созданной заявки: {}", applicationFromDb.getApplicationId());
+        return applicationFromDb;
     }
 }

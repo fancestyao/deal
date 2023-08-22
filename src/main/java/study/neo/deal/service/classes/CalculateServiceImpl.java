@@ -66,6 +66,8 @@ public class CalculateServiceImpl implements CalculateService {
                 .time(LocalDateTime.now())
                 .changeType(ChangeType.AUTOMATIC)
                 .build();
+        log.info("Добавляем Credit: {} в Application: {}", credit, application);
+        application.setCredit(credit);
         log.info("Добавляем в заявку статус: {}", ApplicationStatus.CC_APPROVED);
         application.setStatus(ApplicationStatus.CC_APPROVED);
         log.info("Добавляем в заявку историю статусов: {}", applicationStatusHistoryDTO);
