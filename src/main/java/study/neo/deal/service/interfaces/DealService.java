@@ -8,6 +8,8 @@ import java.util.List;
 
 public interface DealService {
     List<LoanOfferDTO> application(LoanApplicationRequestDTO loanApplicationRequestDTO);
+
     void offer(LoanOfferDTO loanOfferDTO);
+
     void calculate(FinishRegistrationRequestDTO finishRegistrationRequestDTO, Long applicationId);
 }
