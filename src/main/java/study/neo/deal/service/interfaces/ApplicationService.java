@@ -1,0 +1,8 @@
+package study.neo.deal.service.interfaces;
+
+import study.neo.deal.dto.LoanApplicationRequestDTO;
+import study.neo.deal.model.Application;
+
+public interface ApplicationService {
+    Application createApplication(LoanApplicationRequestDTO loanApplicationRequestDTO);
+}
