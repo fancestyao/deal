@@ -46,7 +46,8 @@ public class DealController {
                     " история статусов и LoanOfferDTO помещается в поле appliedOffer")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Операция прошла успешно"),
-            @ApiResponse(responseCode = "404", description = "Заявка не найдена в БД")
+            @ApiResponse(responseCode = "404", description = "Заявка не найдена в БД"),
+            @ApiResponse(responseCode = "409", description = "Неверные начальные данные")
     })
     public void offer(@RequestBody @Parameter(description =
             "Входные параметры в виде рассчитанных условий кредита для пользователя") LoanOfferDTO loanOfferDTO) {
@@ -62,7 +63,8 @@ public class DealController {
                     " к МС Конвейер")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Операция прошла успешно"),
-            @ApiResponse(responseCode = "404", description = "Заявка не найдена в БД")
+            @ApiResponse(responseCode = "404", description = "Заявка не найдена в БД"),
+            @ApiResponse(responseCode = "409", description = "Неверные начальные данные")
     })
     public void calculate(@RequestBody @Parameter(description =
             "Входной параметр наполнения ScoringDataDTO") FinishRegistrationRequestDTO finishRegistrationRequestDTO,
