@@ -10,4 +10,7 @@ public interface DealService {
     List<LoanOfferDTO> application(LoanApplicationRequestDTO loanApplicationRequestDTO);
     void offer(LoanOfferDTO loanOfferDTO);
     void calculate(FinishRegistrationRequestDTO finishRegistrationRequestDTO, Long applicationId);
+    void sendDocuments(Long applicationId);
+    void signDocuments(Long applicationId);
+    void codeDocuments(Long applicationId);
 }

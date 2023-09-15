@@ -70,8 +70,53 @@ public class DealController {
             "Входной параметр наполнения ScoringDataDTO") FinishRegistrationRequestDTO finishRegistrationRequestDTO,
                           @Parameter(description = "По идентификатору ищется соответствующий application")
                           @PathVariable Long applicationId) {
-        log.info("Получен запрос в контроллер наполнение ScoringDataDTO с входными данными: {} и applicationId: {}",
+        log.info("Получен запрос в контроллер на наполнение ScoringDataDTO с входными данными: {} и applicationId: {}",
                 finishRegistrationRequestDTO, applicationId);
         dealService.calculate(finishRegistrationRequestDTO, applicationId);
+    }
+
+    @PostMapping("/document/{applicationId}/send")
+    @Operation(summary = "Запрос на отправку документов",
+            description = "На почту клиента отправляется запрос на отправку " +
+                    "им в дальнейшем дополнительных документов для создания кредитного предложения")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Операция прошла успешно"),
+            @ApiResponse(responseCode = "404", description = "Заявка не найдена в БД")
+    })
+    public void sendDocument(@Parameter(description = "По идентификатору ищется соответствующий application")
+                             @PathVariable Long applicationId) {
+        log.info("Получен запрос в контроллер на отправку запроса на запрашивание " +
+                "дополнительных документов для applicationId: {}", applicationId);
+        dealService.sendDocuments(applicationId);
+    }
+
+    @PostMapping("/document/{applicationId}/sign")
+    @Operation(summary = "Запрос на подписание документов",
+            description = "На почту клиента отправляется запрос на подписание " +
+                    "дополнительных документов для создания кредитного предложения")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Операция прошла успешно"),
+            @ApiResponse(responseCode = "404", description = "Заявка не найдена в БД")
+    })
+    public void signDocument(@Parameter(description = "По идентификатору ищется соответствующий application")
+                             @PathVariable Long applicationId) {
+        log.info("Получен запрос в контроллер на отправку запроса на подписание" +
+                "дополнительных документов для applicationId: {}", applicationId);
+        dealService.signDocuments(applicationId);
+    }
+
+    @PostMapping("/document/{applicationId}/code")
+    @Operation(summary = "Запрос на подтверждение подписанных документов",
+            description = "На почту клиента отправляется запрос на подтверждение подписанных ранее " +
+                    "дополнительных документов для создания кредитного предложения")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Операция прошла успешно"),
+            @ApiResponse(responseCode = "404", description = "Заявка не найдена в БД")
+    })
+    public void codeDocument(@Parameter(description = "По идентификатору ищется соответствующий application")
+                             @PathVariable Long applicationId) {
+        log.info("Получен запрос в контроллер на отправку запроса на подтверждение ранее подписанных клиентом" +
+                "дополнительных документов для applicationId: {}", applicationId);
+        dealService.codeDocuments(applicationId);
     }
 }

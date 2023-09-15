@@ -18,6 +18,8 @@ import study.neo.deal.service.interfaces.ApplicationService;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static study.neo.deal.service.classes.SesCodeNumberGenerator.generate;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -52,6 +54,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     }
 
     private Application createApplication(Client client) {
+        Integer sesCode = generate();
         ApplicationStatusHistoryDTO applicationStatusHistoryDTO = ApplicationStatusHistoryDTO.builder()
                 .status(ApplicationStatus.PREAPPROVAL)
                 .time(LocalDateTime.now())
@@ -62,6 +65,7 @@ public class ApplicationServiceImpl implements ApplicationService {
                 .client(client)
                 .status(ApplicationStatus.PREAPPROVAL)
                 .statusHistory(List.of(applicationStatusHistoryDTO))
+                .sesCode(sesCode)
                 .build();
         log.info("Созданная заявка: {}", application);
         Application applicationFromDb = applicationRepository.save(application);

@@ -18,6 +18,7 @@ public class DealServiceImpl implements DealService {
     private final OfferService offerService;
     private final CalculateService calculateService;
     private final FeignConveyorClient feignConveyorClient;
+    private final KafkaService kafkaService;
 
     @Transactional
     @Override
@@ -39,5 +40,20 @@ public class DealServiceImpl implements DealService {
     @Override
     public void calculate(FinishRegistrationRequestDTO finishRegistrationRequestDTO, Long applicationId) {
         calculateService.configureCalculation(finishRegistrationRequestDTO, applicationId);
+    }
+
+    @Override
+    public void sendDocuments(Long applicationId) {
+        kafkaService.sendDocumentsEmail(applicationId);
+    }
+
+    @Override
+    public void signDocuments(Long applicationId) {
+        kafkaService.signDocumentsEmail(applicationId);
+    }
+
+    @Override
+    public void codeDocuments(Long applicationId) {
+        kafkaService.codeDocumentsEmail(applicationId);
     }
 }
