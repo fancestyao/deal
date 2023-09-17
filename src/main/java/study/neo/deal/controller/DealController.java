@@ -114,9 +114,10 @@ public class DealController {
             @ApiResponse(responseCode = "404", description = "Заявка не найдена в БД")
     })
     public void codeDocument(@Parameter(description = "По идентификатору ищется соответствующий application")
-                             @PathVariable Long applicationId) {
+                             @PathVariable Long applicationId,
+                             @RequestBody Integer sesCode) {
         log.info("Получен запрос в контроллер на отправку запроса на подтверждение ранее подписанных клиентом" +
                 "дополнительных документов для applicationId: {}", applicationId);
-        dealService.codeDocuments(applicationId);
+        dealService.codeDocuments(applicationId, sesCode);
     }
 }

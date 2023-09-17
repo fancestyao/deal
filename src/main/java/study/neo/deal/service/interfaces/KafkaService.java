@@ -1,10 +1,7 @@
 package study.neo.deal.service.interfaces;
 
-import study.neo.deal.dto.EmailMessage;
+import study.neo.deal.enumeration.Theme;
 
 public interface KafkaService {
-    void sendDocumentsEmail(Long applicationId);
-    void signDocumentsEmail(Long applicationId);
-    void codeDocumentsEmail(Long applicationId);
-    void sendConflictEmail(EmailMessage emailMessage);
+    void sendEmailToDossier(Long applicationId, Theme theme);
 }

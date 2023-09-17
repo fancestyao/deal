@@ -5,4 +5,8 @@ import study.neo.deal.model.Application;
 
 public interface ApplicationService {
     Application createApplication(LoanApplicationRequestDTO loanApplicationRequestDTO);
+
+    void setSesCodeToApplication(Long applicationId);
+
+    void validateSesCode(Long applicationId, Integer sesCode);
 }

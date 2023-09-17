@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import study.neo.deal.dto.ApplicationStatusHistoryDTO;
-import study.neo.deal.dto.EmailMessage;
 import study.neo.deal.dto.LoanOfferDTO;
 import study.neo.deal.enumeration.Theme;
 import study.neo.deal.model.Application;
@@ -12,6 +11,7 @@ import study.neo.deal.enumeration.ApplicationStatus;
 import study.neo.deal.enumeration.ChangeType;
 import study.neo.deal.exception.NotFoundException;
 import study.neo.deal.repository.ApplicationRepository;
+import study.neo.deal.service.interfaces.KafkaService;
 import study.neo.deal.service.interfaces.OfferService;
 
 import java.time.LocalDateTime;
@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @Slf4j
 public class OfferServiceImpl implements OfferService {
     private final ApplicationRepository applicationRepository;
-    private final KafkaDealSender kafkaDealSender;
+    private final KafkaService kafkaService;
 
     @Override
     public void configureOffer(LoanOfferDTO loanOfferDTO) {
@@ -45,14 +45,7 @@ public class OfferServiceImpl implements OfferService {
         log.info("Измененная заявка: {}", application);
         applicationRepository.save(application);
         log.info("Заявка успешно изменена и добавлена в БД.");
-        log.info("Наполняем EmailMessage");
-        EmailMessage emailMessage = EmailMessage.builder()
-                .address(application.getClient().getEmail())
-                .applicationId(application.getApplicationId())
-                .theme(Theme.FINISH_REGISTRATION)
-                .build();
-        log.info("Наполненное EmailMessage: {}", emailMessage);
-        log.info("Отправляем запрос на Dossier");
-        kafkaDealSender.sendMessage(emailMessage, "finish-registration");
+        log.info("Отправляем emailMessage на MC Dossier (finish_registration) с помощью kafkaService");
+        kafkaService.sendEmailToDossier(application.getApplicationId(), Theme.FINISH_REGISTRATION);
     }
 }

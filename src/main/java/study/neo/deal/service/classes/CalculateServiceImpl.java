@@ -49,17 +49,24 @@ public class CalculateServiceImpl implements CalculateService {
         log.info("Насыщаем данными ScoringDataDTO с помощью Client из application: {}" +
                 " и FinisRegistrationRequestDTO: {}", application.getClient(), finishRegistrationRequestDTO);
         ScoringDataDTO scoringDataDTO = fillScoringDataDTO(application);
-        log.info("Отправляем Post-запрос на МС Conveyor");
         CreditDTO creditDTO = null;
         try {
+            log.info("Отправляем Post-запрос на МС Conveyor");
             creditDTO = feignConveyorClient.getCalculation(scoringDataDTO);
         } catch (FeignException.FeignClientException.Conflict e) {
-            EmailMessage emailMessage = EmailMessage.builder()
-                    .applicationId(applicationId)
-                    .address(application.getClient().getEmail())
-                    .theme(Theme.APPLICATION_DENIED)
+            ApplicationStatusHistoryDTO applicationStatusHistoryDTO = ApplicationStatusHistoryDTO.builder()
+                    .status(ApplicationStatus.CC_DENIED)
+                    .time(LocalDateTime.now())
+                    .changeType(ChangeType.AUTOMATIC)
                     .build();
-            kafkaService.sendConflictEmail(emailMessage);
+            log.info("Добавляем в заявку статус: {}", ApplicationStatus.CC_DENIED);
+            application.setStatus(ApplicationStatus.CC_DENIED);
+            log.info("Добавляем в заявку историю статусов: {}", applicationStatusHistoryDTO);
+            application.getStatusHistory().add(applicationStatusHistoryDTO);
+            log.info("Измененная заявка: {}", application);
+            applicationRepository.save(application);
+            log.info("Отправляем emailMessage на MC Dossier (application_denied) с помощью kafkaService");
+            kafkaService.sendEmailToDossier(applicationId, Theme.APPLICATION_DENIED);
         }
         if (creditDTO != null) {
             log.info("Получаем CreditDTO с MC Conveyor: {}", creditDTO);
@@ -90,14 +97,8 @@ public class CalculateServiceImpl implements CalculateService {
             log.info("Измененная заявка: {}", application);
             applicationRepository.save(application);
             log.info("Заявка успешно изменена и добавлена в БД.");
-            EmailMessage emailMessage = EmailMessage.builder()
-                    .applicationId(applicationId)
-                    .address(application.getClient().getEmail())
-                    .theme(Theme.CREATE_DOCUMENTS)
-                    .build();
-            log.info("Наполненное EmailMessage: {}", emailMessage);
-            log.info("Отправляем запрос на Dossier");
-            kafkaService.sendDocumentsEmail(applicationId);
+            log.info("Отправляем emailMessage на MC Dossier (create_documents) с помощью kafkaService");
+            kafkaService.sendEmailToDossier(applicationId, Theme.CREATE_DOCUMENTS);
         }
     }
 

@@ -12,5 +12,5 @@ public interface DealService {
     void calculate(FinishRegistrationRequestDTO finishRegistrationRequestDTO, Long applicationId);
     void sendDocuments(Long applicationId);
     void signDocuments(Long applicationId);
-    void codeDocuments(Long applicationId);
+    void codeDocuments(Long applicationId, Integer sesCode);
 }
