@@ -18,7 +18,7 @@ public class KafkaServiceImpl implements KafkaService {
     private final KafkaDealSender kafkaDealSender;
 
     @Override
-    public void sendEmailToDossier(Long applicationId, Theme theme) {
+    public void sendEmailToDossier(Long applicationId, Theme theme, String themeName) {
         log.info("Достаем из БД заявку с id: " + applicationId);
         Application application = getApplicationFromDB(applicationId);
         log.info("Собираем emailMessage");
@@ -30,7 +30,7 @@ public class KafkaServiceImpl implements KafkaService {
                 .build();
         log.info("Наполненное EmailMessage: {}", emailMessage);
         log.info("Отправляем запрос на MC Dossier");
-        kafkaDealSender.sendMessage(emailMessage, theme.toString().toLowerCase().replace("_", "-"));
+        kafkaDealSender.sendMessage(emailMessage, themeName);
     }
 
     private Application getApplicationFromDB(Long applicationId) {

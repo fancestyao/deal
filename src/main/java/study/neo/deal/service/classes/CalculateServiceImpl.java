@@ -3,11 +3,11 @@ package study.neo.deal.service.classes;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import study.neo.deal.dto.*;
 import study.neo.deal.enumeration.ApplicationStatus;
-import study.neo.deal.enumeration.ChangeType;
 import study.neo.deal.enumeration.CreditStatus;
 import study.neo.deal.enumeration.Theme;
 import study.neo.deal.model.Application;
@@ -16,11 +16,10 @@ import study.neo.deal.model.Credit;
 import study.neo.deal.repository.ApplicationRepository;
 import study.neo.deal.repository.ClientRepository;
 import study.neo.deal.repository.CreditRepository;
+import study.neo.deal.service.interfaces.ApplicationService;
 import study.neo.deal.service.interfaces.CalculateService;
 import study.neo.deal.service.interfaces.FeignConveyorClient;
 import study.neo.deal.service.interfaces.KafkaService;
-
-import java.time.LocalDateTime;
 
 @Component
 @RequiredArgsConstructor
@@ -29,8 +28,13 @@ public class CalculateServiceImpl implements CalculateService {
     private final KafkaService kafkaService;
     private final FeignConveyorClient feignConveyorClient;
     private final ApplicationRepository applicationRepository;
+    private final ApplicationService applicationService;
     private final ClientRepository clientRepository;
     private final CreditRepository creditRepository;
+    @Value("${kafka.tn.application-denied}")
+    private String applicationDeniedValue;
+    @Value("${kafka.tn.create-documents}")
+    private String createDocumentsValue;
 
     @Override
     @Transactional
@@ -54,19 +58,9 @@ public class CalculateServiceImpl implements CalculateService {
             log.info("Отправляем Post-запрос на МС Conveyor");
             creditDTO = feignConveyorClient.getCalculation(scoringDataDTO);
         } catch (FeignException.FeignClientException.Conflict e) {
-            ApplicationStatusHistoryDTO applicationStatusHistoryDTO = ApplicationStatusHistoryDTO.builder()
-                    .status(ApplicationStatus.CC_DENIED)
-                    .time(LocalDateTime.now())
-                    .changeType(ChangeType.AUTOMATIC)
-                    .build();
-            log.info("Добавляем в заявку статус: {}", ApplicationStatus.CC_DENIED);
-            application.setStatus(ApplicationStatus.CC_DENIED);
-            log.info("Добавляем в заявку историю статусов: {}", applicationStatusHistoryDTO);
-            application.getStatusHistory().add(applicationStatusHistoryDTO);
-            log.info("Измененная заявка: {}", application);
-            applicationRepository.save(application);
+            applicationService.updateApplicationStatus(applicationId, ApplicationStatus.CC_DENIED);
             log.info("Отправляем emailMessage на MC Dossier (application_denied) с помощью kafkaService");
-            kafkaService.sendEmailToDossier(applicationId, Theme.APPLICATION_DENIED);
+            kafkaService.sendEmailToDossier(applicationId, Theme.APPLICATION_DENIED, applicationDeniedValue);
         }
         if (creditDTO != null) {
             log.info("Получаем CreditDTO с MC Conveyor: {}", creditDTO);
@@ -83,22 +77,9 @@ public class CalculateServiceImpl implements CalculateService {
                     .build();
             creditRepository.save(credit);
             log.info("Созданный Credit: {}", credit);
-            ApplicationStatusHistoryDTO applicationStatusHistoryDTO = ApplicationStatusHistoryDTO.builder()
-                    .status(ApplicationStatus.CC_APPROVED)
-                    .time(LocalDateTime.now())
-                    .changeType(ChangeType.AUTOMATIC)
-                    .build();
-            log.info("Добавляем Credit: {} в Application: {}", credit, application);
-            application.setCredit(credit);
-            log.info("Добавляем в заявку статус: {}", ApplicationStatus.CC_APPROVED);
-            application.setStatus(ApplicationStatus.CC_APPROVED);
-            log.info("Добавляем в заявку историю статусов: {}", applicationStatusHistoryDTO);
-            application.getStatusHistory().add(applicationStatusHistoryDTO);
-            log.info("Измененная заявка: {}", application);
-            applicationRepository.save(application);
-            log.info("Заявка успешно изменена и добавлена в БД.");
+            applicationService.updateApplicationStatus(applicationId, ApplicationStatus.CC_APPROVED);
             log.info("Отправляем emailMessage на MC Dossier (create_documents) с помощью kafkaService");
-            kafkaService.sendEmailToDossier(applicationId, Theme.CREATE_DOCUMENTS);
+            kafkaService.sendEmailToDossier(applicationId, Theme.CREATE_DOCUMENTS, createDocumentsValue);
         }
     }
 

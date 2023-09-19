@@ -2,6 +2,7 @@ package study.neo.deal.service.classes;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import study.neo.deal.dto.ApplicationStatusHistoryDTO;
 import study.neo.deal.dto.LoanOfferDTO;
@@ -22,6 +23,8 @@ import java.time.LocalDateTime;
 public class OfferServiceImpl implements OfferService {
     private final ApplicationRepository applicationRepository;
     private final KafkaService kafkaService;
+    @Value("${kafka.tn.finish-registration}")
+    private String finishRegistrationValue;
 
     @Override
     public void configureOffer(LoanOfferDTO loanOfferDTO) {
@@ -46,6 +49,7 @@ public class OfferServiceImpl implements OfferService {
         applicationRepository.save(application);
         log.info("Заявка успешно изменена и добавлена в БД.");
         log.info("Отправляем emailMessage на MC Dossier (finish_registration) с помощью kafkaService");
-        kafkaService.sendEmailToDossier(application.getApplicationId(), Theme.FINISH_REGISTRATION);
+        kafkaService.sendEmailToDossier(application.getApplicationId(),
+                Theme.FINISH_REGISTRATION, finishRegistrationValue);
     }
 }

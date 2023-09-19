@@ -15,12 +15,10 @@ import study.neo.deal.dto.Passport;
 import study.neo.deal.repository.ApplicationRepository;
 import study.neo.deal.repository.ClientRepository;
 import study.neo.deal.service.interfaces.ApplicationService;
-import study.neo.deal.service.interfaces.KafkaService;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static study.neo.deal.enumeration.Theme.CREDIT_ISSUED;
 import static study.neo.deal.service.classes.SesCodeNumberGenerator.generate;
 
 @Service
@@ -28,7 +26,6 @@ import static study.neo.deal.service.classes.SesCodeNumberGenerator.generate;
 @Slf4j
 public class ApplicationServiceImpl implements ApplicationService {
     private final ClientRepository clientRepository;
-    private final KafkaService kafkaService;
     private final ApplicationRepository applicationRepository;
 
     @Transactional
@@ -69,11 +66,31 @@ public class ApplicationServiceImpl implements ApplicationService {
             log.info("Входящий SES Code: {} и имеющийся у заявки application SES Code: {} не совпадают", sesCode,
                     application.getSesCode());
         } else {
-            log.info("Отправляем emailMessage на MC Dossier (credit_issued) с помощью kafkaService");
-            kafkaService.sendEmailToDossier(applicationId, CREDIT_ISSUED);
             log.info("Входящий SES Code: {} и имеющийся у заявки application SES Code: {} совпадают", sesCode,
                     application.getSesCode());
         }
+    }
+
+    @Override
+    public void updateApplicationStatus(Long applicationId, ApplicationStatus applicationStatus) {
+        log.info("Достаем из БД заявку с id: " + applicationId);
+        Application application = applicationRepository
+                .findById(applicationId)
+                .orElseThrow(() -> new NotFoundException("Заявки с id: " +
+                        applicationId + " не существует."));
+        log.info("Рассматриваемая заявка: {}", application);
+        ApplicationStatusHistoryDTO applicationStatusHistoryDTO = ApplicationStatusHistoryDTO.builder()
+                .status(applicationStatus)
+                .time(LocalDateTime.now())
+                .changeType(ChangeType.AUTOMATIC)
+                .build();
+        log.info("Добавляем в заявку статус: {}", applicationStatus);
+        application.setStatus(applicationStatus);
+        log.info("Добавляем в заявку историю статусов: {}", applicationStatusHistoryDTO);
+        application.getStatusHistory().add(applicationStatusHistoryDTO);
+        log.info("Измененная заявка: {}", application);
+        applicationRepository.save(application);
+        log.info("Заявка успешно изменена и добавлена в БД.");
     }
 
     private Client createClient(LoanApplicationRequestDTO loanApplicationRequestDTO) {
