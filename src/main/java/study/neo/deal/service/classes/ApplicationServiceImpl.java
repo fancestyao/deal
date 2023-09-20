@@ -93,6 +93,28 @@ public class ApplicationServiceImpl implements ApplicationService {
         log.info("Заявка успешно изменена и добавлена в БД.");
     }
 
+    @Override
+    public List<Application> getListOfApplications() {
+        log.info("Достаем список всех заявок из БД");
+        List<Application> listOfApplications = applicationRepository.findAll();
+        log.info("Полученный из БД список всех заявок listOfApplications: {}", listOfApplications);
+        if (listOfApplications.isEmpty()) {
+            throw new NotFoundException("Еще не было создано ни одной заявки.");
+        }
+        return listOfApplications;
+    }
+
+    @Override
+    public Application getApplicationById(Long applicationId) {
+        log.info("Достаем заявку из БД с applicationId: {}", applicationId);
+        Application application = applicationRepository
+                .findById(applicationId)
+                .orElseThrow(() -> new NotFoundException("Заявки с id: " +
+                        applicationId + " не существует."));
+        log.info("Рассматриваемая заявка: {}", application);
+        return application;
+    }
+
     private Client createClient(LoanApplicationRequestDTO loanApplicationRequestDTO) {
         Passport passport = new Passport();
         passport.setSeries(loanApplicationRequestDTO.getPassportSeries());

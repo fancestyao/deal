@@ -61,6 +61,8 @@ public class CalculateServiceImpl implements CalculateService {
             applicationService.updateApplicationStatus(applicationId, ApplicationStatus.CC_DENIED);
             log.info("Отправляем emailMessage на MC Dossier (application_denied) с помощью kafkaService");
             kafkaService.sendEmailToDossier(applicationId, Theme.APPLICATION_DENIED, applicationDeniedValue);
+            throw new FeignException.FeignClientException.Conflict(e.getMessage(), e.request(),
+                    e.responseBody().get().array(), e.responseHeaders());
         }
         if (creditDTO != null) {
             log.info("Получаем CreditDTO с MC Conveyor: {}", creditDTO);

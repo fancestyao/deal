@@ -32,7 +32,6 @@ public class DealServiceImpl implements DealService {
     @Value("${kafka.tn.credit-issued}")
     private String creditIssuedValue;
 
-
     @Transactional
     @Override
     public List<LoanOfferDTO> application(LoanApplicationRequestDTO loanApplicationRequestDTO) {
@@ -77,5 +76,17 @@ public class DealServiceImpl implements DealService {
         applicationService.updateApplicationStatus(applicationId, ApplicationStatus.CREDIT_ISSUED);
         log.info("Отправляем emailMessage на MC Dossier (credit_issued) с помощью kafkaService");
         kafkaService.sendEmailToDossier(applicationId, CREDIT_ISSUED, creditIssuedValue);
+    }
+
+    @Override
+    public List<Application> getListOfApplications() {
+        log.info("Запрос на получение списка всех заявок передан в DealServiceImpl");
+        return applicationService.getListOfApplications();
+    }
+
+    @Override
+    public Application getApplicationById(Long applicationId) {
+        log.info("Запрос на получение заявки по id передан в DealServiceImpl");
+        return applicationService.getApplicationById(applicationId);
     }
 }
