@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import study.neo.deal.dto.ApplicationStatusHistoryDTO;
 import study.neo.deal.dto.LoanApplicationRequestDTO;
+import study.neo.deal.exception.NotFoundException;
 import study.neo.deal.model.Application;
 import study.neo.deal.model.Client;
 import study.neo.deal.enumeration.ApplicationStatus;
@@ -17,6 +18,8 @@ import study.neo.deal.service.interfaces.ApplicationService;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
+import static study.neo.deal.service.classes.SesCodeNumberGenerator.generate;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +35,62 @@ public class ApplicationServiceImpl implements ApplicationService {
         Client client = createClient(loanApplicationRequestDTO);
         log.info("Создаем заявку");
         return createApplication(client);
+    }
+
+    @Override
+    public void setSesCodeToApplication(Long applicationId) {
+        log.info("Достаем из БД заявку с id: " + applicationId);
+        Application application = applicationRepository
+                .findById(applicationId)
+                .orElseThrow(() -> new NotFoundException("Заявки с id: " +
+                        applicationId + " не существует."));
+        log.info("Рассматриваемая заявка: {}", application);
+        log.info("Генерируем SES Code для заявки: {}", application);
+        Integer sesCode = generate();
+        log.info("Сгенерированный SES Code: {}", sesCode);
+        application.setSesCode(sesCode);
+        log.info("Обновляем заявку в БД с Ses Code");
+        Application updatedApplication = applicationRepository.save(application);
+        log.info("Ses code в обновленной заявке: {}", updatedApplication.getSesCode());
+    }
+
+    @Override
+    public void validateSesCode(Long applicationId, Integer sesCode) {
+        log.info("Достаем из БД заявку с id: " + applicationId);
+        Application application = applicationRepository
+                .findById(applicationId)
+                .orElseThrow(() -> new NotFoundException("Заявки с id: " +
+                        applicationId + " не существует."));
+        log.info("Рассматриваемая заявка: {}", application);
+        if (!application.getSesCode().equals(sesCode)) {
+            log.info("Входящий SES Code: {} и имеющийся у заявки application SES Code: {} не совпадают", sesCode,
+                    application.getSesCode());
+        } else {
+            log.info("Входящий SES Code: {} и имеющийся у заявки application SES Code: {} совпадают", sesCode,
+                    application.getSesCode());
+        }
+    }
+
+    @Override
+    public void updateApplicationStatus(Long applicationId, ApplicationStatus applicationStatus) {
+        log.info("Достаем из БД заявку с id: " + applicationId);
+        Application application = applicationRepository
+                .findById(applicationId)
+                .orElseThrow(() -> new NotFoundException("Заявки с id: " +
+                        applicationId + " не существует."));
+        log.info("Рассматриваемая заявка: {}", application);
+        ApplicationStatusHistoryDTO applicationStatusHistoryDTO = ApplicationStatusHistoryDTO.builder()
+                .status(applicationStatus)
+                .time(LocalDateTime.now())
+                .changeType(ChangeType.AUTOMATIC)
+                .build();
+        log.info("Добавляем в заявку статус: {}", applicationStatus);
+        application.setStatus(applicationStatus);
+        log.info("Добавляем в заявку историю статусов: {}", applicationStatusHistoryDTO);
+        application.getStatusHistory().add(applicationStatusHistoryDTO);
+        log.info("Измененная заявка: {}", application);
+        applicationRepository.save(application);
+        log.info("Заявка успешно изменена и добавлена в БД.");
     }
 
     private Client createClient(LoanApplicationRequestDTO loanApplicationRequestDTO) {

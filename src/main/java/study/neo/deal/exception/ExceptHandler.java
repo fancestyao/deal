@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 
 @RestControllerAdvice
 @Slf4j
+@RequiredArgsConstructor
 public class ExceptHandler {
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
