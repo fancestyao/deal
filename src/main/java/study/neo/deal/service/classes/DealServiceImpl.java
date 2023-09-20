@@ -60,11 +60,11 @@ public class DealServiceImpl implements DealService {
         applicationService.updateApplicationStatus(applicationId, ApplicationStatus.PREPARE_DOCUMENTS);
         log.info("Отправляем emailMessage на MC Dossier (send_documents) с помощью kafkaService");
         kafkaService.sendEmailToDossier(applicationId, SEND_DOCUMENTS, sendDocumentsValue);
+        applicationService.updateApplicationStatus(applicationId, ApplicationStatus.DOCUMENT_CREATED);
     }
 
     @Override
     public void signDocuments(Long applicationId) {
-        applicationService.updateApplicationStatus(applicationId, ApplicationStatus.DOCUMENT_CREATED);
         applicationService.setSesCodeToApplication(applicationId);
         log.info("Отправляем emailMessage на MC Dossier (sens_ses) с помощью kafkaService");
         kafkaService.sendEmailToDossier(applicationId, SEND_SES, sendSesValue);
