@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import study.neo.deal.dto.FinishRegistrationRequestDTO;
 import study.neo.deal.dto.LoanApplicationRequestDTO;
 import study.neo.deal.dto.LoanOfferDTO;
+import study.neo.deal.model.Application;
 import study.neo.deal.service.interfaces.DealService;
 
 import java.util.List;
@@ -115,9 +116,38 @@ public class DealController {
     })
     public void codeDocument(@Parameter(description = "По идентификатору ищется соответствующий application")
                              @PathVariable Long applicationId,
+                             @Parameter(description = "В тело передается ses code для верификации")
                              @RequestBody Integer sesCode) {
-        log.info("Получен запрос в контроллер на отправку запроса на подтверждение ранее подписанных клиентом" +
+        log.info("Получен запрос в контроллер на отправку запроса на подтверждение ранее подписанных клиентом " +
                 "дополнительных документов для applicationId: {}", applicationId);
         dealService.codeDocuments(applicationId, sesCode);
+    }
+
+    @GetMapping("/admin/application/{applicationId}")
+    @Operation(summary = "Запрос на получение заявки из БД для админа",
+            description = "По входящему applicationId отправляется запрос на получение заявки " +
+                    "из базы данных для администратора")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Операция прошла успешно"),
+            @ApiResponse(responseCode = "404", description = "Заявка не найдена в БД")
+    })
+    public ResponseEntity<Application> getApplicationById(
+                                   @Parameter(description = "По идентификатору ищется соответствующий application")
+                                   @PathVariable Long applicationId) {
+        log.info("Получен запрос в контроллер на получение заявки для администратора " +
+                "по applicationId: {}", applicationId);
+        return new ResponseEntity<>(dealService.getApplicationById(applicationId), HttpStatus.OK);
+    }
+
+    @GetMapping("/admin/application")
+    @Operation(summary = "Запрос на получение всех заявок из БД для админа",
+            description = "Отправляется запрос на получение всех заявок из базы данных для администратора")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Операция прошла успешно"),
+            @ApiResponse(responseCode = "404", description = "Заявок в базе данных еще нет")
+    })
+    public ResponseEntity<List<Application>> getListOfApplications() {
+        log.info("Получен запрос в контроллер на получение списка всех имеющихся заявок для администратора");
+        return new ResponseEntity<>(dealService.getListOfApplications(), HttpStatus.OK);
     }
 }

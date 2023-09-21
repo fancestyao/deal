@@ -19,6 +19,7 @@ public interface FeignConveyorClient {
             "Входные параметры для расчета условий кредита для пользователя")
                                               LoanApplicationRequestDTO loanApplicationRequestDTO)
             throws FeignException.Conflict;
+
     @PostMapping("/conveyor/calculation")
     CreditDTO getCalculation(@RequestBody @Parameter(description =
             "Входные параметры для расчета параметров кредита")
